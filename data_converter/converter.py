@@ -46,7 +46,7 @@ class MC_Converter:
             f = struct.unpack('f', data[i:i+4])[0]
             float_list.append(f)
         if len(data) == 8:
-            decoded_data = {"timestamp": 0.0, "prediction": 0.0}
+            decoded_data = {"prediction": 0.0, "timestamp": 0.0}
         for i,key in enumerate(decoded_data.keys()):
             decoded_data[key] = float_list[i]
 
