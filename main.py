@@ -6,10 +6,13 @@ from data_converter.converter import MC_Converter
 import time
 import random
 
+TEST_COMS = True
+
 def data_reciever_service(reciever: Reciever) -> None:
     reciever.start_receiving()
 
 def predictor_service(incoming_queue: Queue,transmiter: Transmitter,model_path:str) -> None:
+    global TEST_COMS
     if not TEST_COMS:
         from ai_module.personalization import Personalization_Model
         per_model = Personalization_Model(model_path)
