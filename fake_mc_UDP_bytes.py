@@ -12,6 +12,7 @@ def data_reciever_service(reciever: Reciever) -> None:
     reciever.start_receiving()
 
 def sensor_transmiter_service(incoming_queue: Queue,transmiter: Transmitter) -> None:
+    print('Started')
     while True:
         if not incoming_queue.empty():
             data = incoming_queue.get()
@@ -29,7 +30,7 @@ def sensor_transmiter_service(incoming_queue: Queue,transmiter: Transmitter) -> 
        
         #print(sensors)
         transmiter.send(sensors)
-        print('Transmited sensors data')
+       
         
 if __name__ == '__main__':
 
