@@ -1,0 +1,13 @@
+driver1:
+  speed: 50
+  angv: 2.0
+  normal: 2
+  turns: 1
+  model_path: models/driver1.h5
+
+driver2:
+  speed: 60
+  angv: 1.0
+  normal: 1
+  turns: 0
+  model_path: models/driver1.h5
