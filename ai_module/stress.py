@@ -1,29 +1,37 @@
 from typing import Dict
-import torch
 import numpy as np
 import time
-import torch_esn
-import torch.nn.functional as F
 from stress_preprocessor.preprocessors.preprocessor import StressPreprocessor
 from stress_preprocessor.config import Config
 from copy import deepcopy
 
+subj_params = {
+    "4022": (0.08, 100),
+    "4396": (0.15, 300),
+    "1018": (0.08, 300),
+    "4181": (0.20, 300),
+    "4235": (1.00, 100),
+    "4392": (1.25, 100),
+}
+
 
 class StressModel:
-    def __init__(self, model_path: str, preprocessor_config: Dict) -> None:
+    def __init__(self, subj_id: str, preprocessor_config: Dict) -> None:
         self.preprocessor = StressPreprocessor(**preprocessor_config)
-        self.model = torch.load(model_path)
-        self.reservoir = self.model["reservoir"]
-        self.readout = self.model["readout"]
+        self.buffer_size = preprocessor_config["buffer_size"]
+        self.threshold, self.window_size = subj_params[subj_id]
 
     def prediction(self, obs: dict) -> int:
         data = self.preprocessor.online_run(obs)
         if data is not None:
-            data = torch.from_numpy(data)
-            prediction = F.linear(self.reservoir(data), self.readout)
-            for i in range(len(prediction)):
-                self.to_packet(prediction[i])
-            return prediction
+            data["pred"] = (
+                data.rolling(10).mean().apply(lambda x: 1 if x > self.threshold else 0)
+            )
+            data["smooth_pred"] = (
+                data["pred"].ewm(com=self.window_size, adjust=True).mean()
+            )
+
+            return data["smooth_pred"].iloc[-1]
 
     def to_packet(self, prediction: np.ndarray) -> dict:
         return {
@@ -34,6 +42,8 @@ class StressModel:
 
 
 if __name__ == "__main__":
+    import random
+
     test_data = {
         "timestamp": 0.01,
         "GSR": 1.542,
@@ -53,7 +63,7 @@ if __name__ == "__main__":
     }
 
     predictor = StressModel(
-        "models/stress_model.pkl",
+        "1018",
         {
             "config": Config(
                 "/Users/vdecaro/Desktop/teaching_avl_exps/stress_preprocessor/config/config.json"
@@ -63,8 +73,11 @@ if __name__ == "__main__":
             "buffer_size": 1000,
         },
     )
-    for i in range(200):
+    for i in range(800):
         a = predictor.prediction(deepcopy(test_data))
         test_data["timestamp"] += 0.01
+        test_data["GSR"] += random.random() * 2 - 1
+        test_data["ECG"] += random.random() * 2 - 1
+
         if a is not None:
             print(a)
